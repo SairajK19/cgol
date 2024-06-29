@@ -4,6 +4,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "cgol.h"
+
 #undef ENABLE_GRID
 #undef ENABLE_CELL_COORDINATE
 #define max(a, b)                                                              \
@@ -13,8 +15,8 @@
     _a > _b ? _a : _b;                                                         \
   })
 
-int WIDTH = 1500;
-int HEIGHT = 800;
+int WIDTH = 1550;
+int HEIGHT = 950;
 int GRID_SIZE = 50;
 int CELL_SIZE = 40;
 int MAX_CELLS = 1000;
@@ -26,81 +28,65 @@ struct Cell {
 } typedef Cell;
 
 int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper);
-int get_neighbor_count(int **GameMap, Cell cell);
+int get_neighbor_count(int **game_map, int x, int y);
 
-int **init_simulation(int **GameMap, int *n_cols, int *n_rows, Cell *cells,
-                      int *population) {
-  int *coord, generation_size = 5;
+int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
+                      int type) {
   printf("Rows: %d, Cols: %d\n", *n_cols, *n_cols);
-  GameMap = (int **)malloc(*n_cols * sizeof(int *));
+  game_map = (int **)malloc(*n_cols * sizeof(int *));
 
   for (int i = 0; i <= *n_cols; i++) {
-    GameMap[i] = (int *)malloc(*n_rows * sizeof(int));
-    memset(GameMap[i], 0, *n_rows * sizeof(int));
+    game_map[i] = (int *)malloc(*n_rows * sizeof(int));
+    memset(game_map[i], 0, *n_rows * sizeof(int));
   }
 
-  for (int j = 0; j < 8; j++) {
-    coord = get_random_coordinate(0, *n_rows - 1, 0, *n_cols - 1);
-    printf("Initial Coords %d-%d\n", coord[0], coord[1]);
-    for (int i = 0; i < generation_size; i++) {
-      Cell cell;
-
-      if (i != 0) {
-        do {
-          printf("Getting cell at %d\n", j * generation_size);
-          cell = cells[j * generation_size];
-          coord = get_random_coordinate(cell.x - 1, cell.x + 1, cell.y - 1,
-                                        cell.y + 1);
-        } while (GameMap[coord[0]][coord[1]] == 1 &&
-                 get_neighbor_count(GameMap, cells[j * generation_size]) <
-                     generation_size - 1);
-      }
-
-      cell.x = coord[0];
-      cell.y = coord[1];
-      cell.alive = 1;
-
-      printf("Population: %d. x:%d y:%d\n", *population, cell.x, cell.y);
-      cells[*population] = cell;
-      printf("Adding to map: %d. x:%d y:%d. Added cell at: %d\n", *population,
-             cell.x, cell.y, *population);
-      GameMap[cell.y][cell.x] = 1;
-      (*population)++;
-    }
-  }
-
-  for (int i = 0; i < *n_rows; i++) {
-    for (int j = 0; j < *n_cols; j++) {
-      printf("GameMap[%d][%d] = %d n_rows=%d n_cols=%d\n", j, i, GameMap[j][i],
-             *n_rows, *n_cols);
-      if (GameMap[j][i] != 1) {
-        Cell cell;
-        cell.x = i * GRID_SIZE;
-        cell.y = j * GRID_SIZE;
-        cell.alive = 0;
-
-        cells[*population] = cell;
-        (*population)++;
+  for (int i = 0; i < *n_rows; i = i + 4) {
+    for (int j = 0; j < *n_cols; j = j + 4) {
+      game_map[j][i] = 0;
+      switch (type) {
+      case 0:
+        for (int x = 0; x < 3; x++) {
+          for (int y = 0; y < 3; y++) {
+            if (glider[x][y] == 1) {
+              game_map[0 + y][0 + x] = 1;
+            }
+          }
+        }
+		break;
+      default:
+        for (int x = 0; x < 3; x++) {
+          for (int y = 0; y < 3; y++) {
+            if (straight_line[x][y] == 1) {
+              game_map[j + y][i + x] = 1;
+            }
+          }
+        }
       }
     }
   }
 
-  return GameMap;
+  return game_map;
 }
 
-int get_neighbor_count(int **GameMap, Cell cell) {
-  int count = -1;
-  printf("Getting neigh at \n");
-  for (int i = cell.x - 1; i <= cell.x + 1; i++) {
-    for (int j = cell.y - 1; j <= cell.y + 1; j++) {
+// x = 1, y = 2
+// x = 0-2
+// y = 1-3
+int get_neighbor_count(int **game_map, int x, int y) {
+  int count = 0;
+  for (int i = x - 1; i <= x + 1; i++) {
+    for (int j = y - 1; j <= y + 1; j++) {
       if (i >= 0 && i < HEIGHT / GRID_SIZE && j >= 0 && j < WIDTH / GRID_SIZE) {
-        if (GameMap[j][i] == 1)
+        if (game_map[j][i] == 1)
           count++;
       }
     }
   }
 
-  return count++;
+  if (game_map[y][x] == 1) {
+    return count - 1;
+  }
+
+  return count;
 }
 
 int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper) {
@@ -114,36 +100,69 @@ int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper) {
   return coordinate;
 }
 
-int **simulate_universe(Cell *cells, int *population, int **GameMap) {
-  int neighbor = -1;
-  for (int i = 0; i < *population; i++) {
-    neighbor = get_neighbor_count(GameMap, cells[i]);
+int **simulate_universe(int *population, int **game_map, int *n_rows,
+                        int *n_cols) {
+  int neighbor = 0;
+  int current_generation[*n_cols][*n_rows];
 
-    if (neighbor == 3) {
-      GameMap[cells[i].y][cells[i].x] = 1;
-      cells[i].alive = 1;
-
-      printf("Reseructed x:%d, y:%d\n", cells[i].x, cells[i].y);
-    } else if ((neighbor < 2 || neighbor > 3) && neighbor != -1) {
-      GameMap[cells[i].y][cells[i].x] = 0;
-      cells[i].alive = 0;
-
-      printf("Killed x:%d, y:%d\n", cells[i].x, cells[i].y);
-    } else if (neighbor == 2) {
-      printf("Surviving x:%d, y:%d\n", cells[i].x, cells[i].y);
+  for (int x = 0; x < *n_rows; x++) {
+    for (int y = 0; y < *n_cols; y++) {
+      if (game_map[y][x] == 1)
+        current_generation[y][x] = 1;
+      else if (game_map[y][x] == 0) {
+        current_generation[y][x] = 0;
+      }
     }
-    neighbor = -1;
   }
 
-  return GameMap;
+  printf("----------------------------------------------------------\n");
+  for (int x = 0; x < *n_rows; x++) {
+    for (int y = 0; y < *n_cols; y++) {
+      printf("%d ", current_generation[y][x]);
+    }
+    printf("\n");
+  }
+
+  for (int x = 0; x < *n_rows; x++) {
+    for (int y = 0; y < *n_cols; y++) {
+      neighbor = get_neighbor_count(game_map, x, y);
+      if (x == 1 && y == 0) {
+        printf("Neighbors: %d\n", neighbor);
+      }
+
+      if (neighbor == 3 && current_generation[y][x] == 0) {
+        current_generation[y][x] = 1;
+      } else if ((neighbor < 2 || neighbor > 3) &&
+                 current_generation[y][x] == 1) {
+        current_generation[y][x] = 0;
+      } else if ((neighbor == 2 || neighbor == 3) &&
+                 current_generation[y][x] == 1) {
+        current_generation[y][x] = 1;
+      }
+
+      neighbor = 0;
+    }
+  }
+
+  for (int x = 0; x < *n_rows; x++) {
+    for (int y = 0; y < *n_cols; y++) {
+      if (current_generation[y][x] == 1)
+        game_map[y][x] = 1;
+      else if (current_generation[y][x] == 0) {
+        game_map[y][x] = 0;
+      }
+    }
+  }
+
+  return game_map;
 }
 
 int main() {
   int n_cols = WIDTH / GRID_SIZE, n_rows = HEIGHT / GRID_SIZE, population = 0;
-  int **GameMap;
+  int **game_map;
   Cell cells[MAX_CELLS];
   srand(time(NULL));
-  GameMap = init_simulation(GameMap, &n_cols, &n_rows, cells, &population);
+  game_map = init_simulation(game_map, &n_cols, &n_rows, &population, 0);
   printf("Population: %d\n", population);
 
   InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
@@ -152,7 +171,6 @@ int main() {
     PollInputEvents();
 
     BeginDrawing();
-    WaitTime(0.05);
 
 #ifdef ENABLE_GRID
     for (int i = 0; i < n_rows; i++) {
@@ -165,11 +183,11 @@ int main() {
 
     for (int i = 0; i < n_rows; i++) {
       for (int j = 0; j < n_cols; j++) {
-        if (GameMap[j][i] == 1) {
+        if (game_map[j][i] == 1) {
           DrawRectangle(j * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2,
                         i * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2, CELL_SIZE,
                         CELL_SIZE, WHITE);
-        } else if (GameMap[j][i] == 0) {
+        } else if (game_map[j][i] == 0) {
           DrawRectangle(j * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2,
                         i * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2, CELL_SIZE,
                         CELL_SIZE, RED);
@@ -186,7 +204,8 @@ int main() {
       }
     }
 
-    GameMap = simulate_universe(cells, &population, GameMap);
+    game_map = simulate_universe(&population, game_map, &n_rows, &n_cols);
+    WaitTime(0.5);
     EndDrawing();
   }
   return 0;
