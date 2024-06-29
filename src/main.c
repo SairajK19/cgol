@@ -103,16 +103,13 @@ int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper) {
 int **simulate_universe(int *population, int **game_map, int *n_rows,
                         int *n_cols) {
   int neighbor = 0;
-  int current_generation[*n_cols][*n_rows], generation_cell_count = 0;
-  Cell current_generation_cells[MAX_CELLS];
+  int updated_cell_count = 0;
+  Cell current_gen_updates[MAX_CELLS];
 
   for (int x = 0; x < *n_rows; x++) {
     for (int y = 0; y < *n_cols; y++) {
       Cell cell;
       neighbor = get_neighbor_count(game_map, x, y);
-      if (x == 1 && y == 0) {
-        printf("Neighbors: %d\n", neighbor);
-      }
 
       if (neighbor == 3 && game_map[y][x] == 0) {
         cell = (Cell){.x = x, .y = y, .alive = 1};
@@ -123,18 +120,16 @@ int **simulate_universe(int *population, int **game_map, int *n_rows,
       }
 
       neighbor = 0;
-      current_generation_cells[generation_cell_count] = cell;
-      generation_cell_count++;
+      current_gen_updates[updated_cell_count] = cell;
+      updated_cell_count++;
     }
   }
 
-  for (int i = 0; i < generation_cell_count; i++) {
-    if (current_generation_cells[i].alive == 1) {
-      game_map[current_generation_cells[i].y][current_generation_cells[i].x] =
-          1;
-    } else if (current_generation_cells[i].alive == 0) {
-      game_map[current_generation_cells[i].y][current_generation_cells[i].x] =
-          0;
+  for (int i = 0; i < updated_cell_count; i++) {
+    if (current_gen_updates[i].alive == 1) {
+      game_map[current_gen_updates[i].y][current_gen_updates[i].x] = 1;
+    } else if (current_gen_updates[i].alive == 0) {
+      game_map[current_gen_updates[i].y][current_gen_updates[i].x] = 0;
     }
   }
 
