@@ -8,12 +8,6 @@
 
 #undef ENABLE_GRID
 #undef ENABLE_CELL_COORDINATE
-#define max(a, b)                                                              \
-  ({                                                                           \
-    __typeof__(a) _a = (a);                                                    \
-    __typeof__(b) _b = (b);                                                    \
-    _a > _b ? _a : _b;                                                         \
-  })
 
 int WIDTH = 1550;
 int HEIGHT = 950;
@@ -27,8 +21,6 @@ struct Cell {
   int alive;
 } typedef Cell;
 
-int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper);
-int get_neighbor_count(int **game_map, int x, int y);
 
 int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
                       int type) {
@@ -68,9 +60,6 @@ int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
   return game_map;
 }
 
-// x = 1, y = 2
-// x = 0-2
-// y = 1-3
 int get_neighbor_count(int **game_map, int x, int y) {
   int count = 0;
   for (int i = x - 1; i <= x + 1; i++) {
@@ -87,17 +76,6 @@ int get_neighbor_count(int **game_map, int x, int y) {
   }
 
   return count;
-}
-
-int *get_random_coordinate(int x_lower, int x_upper, int y_lower, int y_upper) {
-  int *coordinate = malloc(2 * sizeof(int));
-  printf("Getting random coord\n");
-
-  coordinate[0] = max(0, rand() % (x_upper - x_lower + 1) + x_lower);
-  coordinate[1] = max(0, rand() % (y_upper - y_lower + 1) + y_lower);
-
-  printf("Got random coord\n");
-  return coordinate;
 }
 
 int **simulate_universe(int *population, int **game_map, int *n_rows,
