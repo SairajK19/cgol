@@ -6,14 +6,14 @@
 
 #include "cgol.h"
 
-#undef ENABLE_GRID
-#undef ENABLE_CELL_COORDINATE
+#define ENABLE_GRID
+#define ENABLE_GENERATION_BAR
 
-int WIDTH = 1550;
-int HEIGHT = 950;
-int GRID_SIZE = 50;
-int CELL_SIZE = 40;
-int MAX_CELLS = 1000;
+int WIDTH = 1560;
+int HEIGHT = 960;
+int GRID_SIZE = 30;
+int CELL_SIZE = 20;
+int MAX_CELLS = 10000;
 
 struct Cell {
   int x;
@@ -21,13 +21,13 @@ struct Cell {
   int alive;
 } typedef Cell;
 
-
 int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
                       int type) {
   printf("Rows: %d, Cols: %d\n", *n_cols, *n_cols);
+
   game_map = (int **)malloc(*n_cols * sizeof(int *));
 
-  for (int i = 0; i <= *n_cols; i++) {
+  for (int i = 0; i < *n_cols; i++) {
     game_map[i] = (int *)malloc(*n_rows * sizeof(int));
     memset(game_map[i], 0, *n_rows * sizeof(int));
   }
@@ -45,7 +45,16 @@ int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
           }
         }
         break;
-      default:
+      case 1:
+        for (int x = 0; x < 3; x++) {
+          for (int y = 0; y < 3; y++) {
+            if (chaos[x][y] == 1) {
+              game_map[*n_cols / 2 + y][*n_rows / 2 + x] = 1;
+            }
+          }
+        }
+        break;
+      case 2:
         for (int x = 0; x < 3; x++) {
           for (int y = 0; y < 3; y++) {
             if (straight_line[x][y] == 1) {
@@ -115,11 +124,13 @@ int **simulate_universe(int *population, int **game_map, int *n_rows,
 }
 
 int main() {
-  int n_cols = WIDTH / GRID_SIZE, n_rows = HEIGHT / GRID_SIZE, population = 0;
-  int **game_map;
+  int n_cols = WIDTH / GRID_SIZE, n_rows = (HEIGHT - GRID_SIZE) / GRID_SIZE,
+      population = 0;
+  int **game_map, generation = 0;
   Cell cells[MAX_CELLS];
+
   srand(time(NULL));
-  game_map = init_simulation(game_map, &n_cols, &n_rows, &population, 0);
+  game_map = init_simulation(game_map, &n_cols, &n_rows, &population, CHAOS);
   printf("Population: %d\n", population);
 
   InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
@@ -132,38 +143,39 @@ int main() {
 #ifdef ENABLE_GRID
     for (int i = 0; i < n_rows; i++) {
       for (int j = 0; j < n_cols; j++) {
-        DrawLine(j * GRID_SIZE, 0, j * GRID_SIZE, HEIGHT * GRID_SIZE, BEIGE);
+        DrawLine(j * GRID_SIZE, 0, j * GRID_SIZE, HEIGHT * GRID_SIZE,
+                 GRID_COLOR);
       }
-      DrawLine(0, i * GRID_SIZE, WIDTH * GRID_SIZE, i * GRID_SIZE, BEIGE);
+      DrawLine(0, i * GRID_SIZE, WIDTH * GRID_SIZE, i * GRID_SIZE, GRID_COLOR);
     }
 #endif
 
     for (int i = 0; i < n_rows; i++) {
       for (int j = 0; j < n_cols; j++) {
+
+#ifdef ENABLE_GENERATION_BAR
+        char s_generation[50];
+        sprintf(s_generation, "Generation: %d", generation);
+        DrawRectangle(0, HEIGHT - GRID_SIZE, WIDTH, GRID_SIZE, BAR_COLOR);
+        DrawText(s_generation, 10, HEIGHT - GRID_SIZE + 5, 20, BEIGE);
+#endif
+
         if (game_map[j][i] == 1) {
           DrawRectangle(j * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2,
                         i * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2, CELL_SIZE,
-                        CELL_SIZE, WHITE);
+                        CELL_SIZE, LIVE_CELL_COLOR);
         } else if (game_map[j][i] == 0) {
           DrawRectangle(j * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2,
                         i * GRID_SIZE + (GRID_SIZE - CELL_SIZE) / 2, CELL_SIZE,
-                        CELL_SIZE, RED);
+                        CELL_SIZE, BLACK);
         }
-
-#ifdef ENABLE_CELL_COORDINATE
-        char snum[10];
-        sprintf(snum, "%d", i);
-        DrawText(snum, j * GRID_SIZE, i * GRID_SIZE, 10, GREEN);
-        DrawText("-", j * GRID_SIZE + 12, i * GRID_SIZE, 10, GREEN);
-        sprintf(snum, "%d", j);
-        DrawText(snum, j * GRID_SIZE + 22, i * GRID_SIZE, 10, GREEN);
-#endif
       }
     }
 
     game_map = simulate_universe(&population, game_map, &n_rows, &n_cols);
-    WaitTime(0.5);
+    WaitTime(0.1);
     EndDrawing();
+    generation++;
   }
   return 0;
 }
