@@ -1,6 +1,6 @@
 LIBS = -lraylib
 FILES = src/main.c
+C_FLAGS = -ggdb
 
 all:
-	gcc $(LIBS) $(FILES) -o build/main;
-	build/main
+	gcc $(LIBS) $(C_FLAGS) $(FILES) -o build/cgol;
