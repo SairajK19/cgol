@@ -36,7 +36,7 @@ int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
     for (int j = 0; j < *n_cols; j = j + 4) {
       game_map[j][i] = 0;
       switch (type) {
-      case 0:
+      case GLIDER:
         for (int x = 0; x < 3; x++) {
           for (int y = 0; y < 3; y++) {
             if (glider[x][y] == 1) {
@@ -45,7 +45,7 @@ int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
           }
         }
         break;
-      case 1:
+      case CHAOS:
         for (int x = 0; x < 3; x++) {
           for (int y = 0; y < 3; y++) {
             if (chaos[x][y] == 1) {
@@ -54,7 +54,7 @@ int **init_simulation(int **game_map, int *n_cols, int *n_rows, int *population,
           }
         }
         break;
-      case 2:
+      case BLINKER:
         for (int x = 0; x < 3; x++) {
           for (int y = 0; y < 3; y++) {
             if (straight_line[x][y] == 1) {
@@ -123,14 +123,17 @@ int **simulate_universe(int *population, int **game_map, int *n_rows,
   return game_map;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   int n_cols = WIDTH / GRID_SIZE, n_rows = (HEIGHT - GRID_SIZE) / GRID_SIZE,
       population = 0;
   int **game_map, generation = 0;
+  int init_mode = CHAOS;
   Cell cells[MAX_CELLS];
 
   srand(time(NULL));
-  game_map = init_simulation(game_map, &n_cols, &n_rows, &population, CHAOS);
+
+  game_map =
+      init_simulation(game_map, &n_cols, &n_rows, &population, init_mode);
   printf("Population: %d\n", population);
 
   InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");

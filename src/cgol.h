@@ -1,7 +1,7 @@
 #include <raylib.h>
 
 enum LifeType {
-	STRAIGHT_LINE = 0,
+	BLINKER = 0,
 	CHAOS = 1,
 	GLIDER = 2,
 };
