@@ -1,6 +1,7 @@
 # CGOL (Conway's Game of Life) 
 
-My simple implementation of conway's game of life in the means of trying of Raylib.
+My simple implementation of conway's game of life in the means of trying out Raylib.
+![](https://0x0.st/XMG-.gif)
 
 ## Quick Start
 
